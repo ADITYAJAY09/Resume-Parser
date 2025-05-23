@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Resume Processing System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 30px; }
+        .upload-area { border: 2px dashed #007bff; padding: 30px; text-align: center; margin: 20px 0; border-radius: 10px; background: #f8f9ff; }
+        .upload-area:hover { background: #e6f2ff; }
+        .results { margin-top: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa; }
+        .score { font-size: 20px; font-weight: bold; margin: 10px 0; }
+        .score.high { color: #28a745; }
+        .score.medium { color: #ffc107; }
+        .score.low { color: #dc3545; }
+        .skills { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .skill-tag { background: #007bff; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px; }
+        .bias-indicator { display: inline-block; padding: 3px 8px; border-radius: 10px; font-size: 11px; margin: 2px; }
+        .bias-low { background: #d4edda; color: #155724; }
+        .bias-medium { background: #fff3cd; color: #856404; }
+        .bias-high { background: #f8d7da; color: #721c24; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .btn:hover { background: #0056b3; }
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #545b62; }
+        .progress-bar { width: 100%; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #28a745, #ffc107, #dc3545); transition: width 0.3s; }
+        .tabs { display: flex; border-bottom: 2px solid #e0e0e0; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab.active { border-bottom-color: #007bff; background: #f8f9ff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Resume Processing System</h1>
+            <p>Advanced NLP-powered resume analysis with bias detection and ATS integration</p>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('single')">Single Resume</div>
+            <div class="tab" onclick="switchTab('batch')">Batch Processing</div>
+            <div class="tab" onclick="switchTab('analytics')">Analytics</div>
+        </div>
+        
+        <div id="single" class="tab-content active">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <p>📄 Click to upload resume (PDF, DOCX, TXT)</p>
+                <input type="file" id="fileInput" style="display: none;" accept=".pdf,.docx,.doc,.txt" onchange="handleFileUpload(this)">
+            </div>
+            
+            <div class="section">
+                <h3>Job Description (Optional)</h3>
+                <textarea id="jobDescription" placeholder="Paste job description here for matching analysis..." 
+                         style="width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
+            </div>
+            
+            <div id="results" class="results" style="display: none;">
+                <div class="grid">
+                    <div class="section">
+                        <h3>📋 Personal Information</h3>
+                        <div id="personalInfo"></div>
+                    </div>
+                    
+                    <div class="section">
+                        <h3>📊 Quality & Match Scores</h3>
+                        <div id="scores"></div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>🎯 Skills</h3>
+                    <div id="skills" class="skills"></div>
+                </div>
+                
+                <div class="section">
+                    <h3>💼 Experience</h3>
+                    <div id="experience"></div>
+                </div>
+                
+                <div class="section">
+                    <h3>🎓 Education</h3>
+                    <div id="education"></div>
+                </div>
+                
+                <div class="section">
+                    <h3>⚖️ Bias Analysis</h3>
+                    <div id="biasAnalysis"></div>
+                </div>
+                
+                <div class="section">
+                    <h3>📄 Summary</h3>
+                    <div id="summary"></div>
+                </div>
+                
+                <div class="section">
+                    <h3>🔗 Export to ATS</h3>
+                    <button class="btn" onclick="exportData('json')">Export JSON</button>
+                    <button class="btn btn-secondary" onclick="exportData('xml')">Export XML</button>
+                    <button class="btn btn-secondary" onclick="exportData('csv')">Export CSV</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="batch" class="tab-content">
+            <div class="upload-area" onclick="document.getElementById('batchFileInput').click()">
+                <p>📁 Click to upload multiple resumes</p>
+                <input type="file" id="batchFileInput" style="display: none;" multiple accept=".pdf,.docx,.doc,.txt" onchange="handleBatchUpload(this)">
+            </div>
+            
+            <div class="section">
+                <h3>Job Description</h3>
+                <textarea id="batchJobDescription" placeholder="Job description for batch matching..." 
+                         style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
+            </div>
+            
+            <div id="batchResults" style="display: none;">
+                <div class="section">
+                    <h3>📊 Batch Processing Results</h3>
+                    <div id="batchTable"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="analytics" class="tab-content">
+            <div class="section">
+                <h3>📈 System Analytics</h3>
+                <p>Analytics dashboard would show:</p>
+                <ul>
+                    <li>Processing statistics</li>
+                    <li>Quality score distributions</li>
+                    <li>Bias detection trends</li>
+                    <li>Skills frequency analysis</li>
+                    <li>ATS integration logs</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+        
+        function handleFileUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const jobDesc = document.getElementById('jobDescription').value;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('job_description', jobDesc);
+                
+                // Show loading
+                document.getElementById('results').style.display = 'block';
+                document.getElementById('personalInfo').innerHTML = '<p>⏳ Processing resume...</p>';
+                
+                fetch('/api/process_resume', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        return;
+                    }
+                    displayResults(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error processing resume');
+                });
+            }
+        }
+        
+        function displayResults(data) {
+            // Personal Info
+            const personalInfo = data.personal_info;
+            document.getElementById('personalInfo').innerHTML = `
+                <p><strong>Name:</strong> ${personalInfo.name || 'Not found'}</p>
+                <p><strong>Email:</strong> ${personalInfo.email || 'Not found'}</p>
+                <p><strong>Phone:</strong> ${personalInfo.phone || 'Not found'}</p>
+                <p><strong>LinkedIn:</strong> ${personalInfo.linkedin || 'Not found'}</p>
+                <p><strong>GitHub:</strong> ${personalInfo.github || 'Not found'}</p>
+            `;
+            
+            // Scores
+            const qualityClass = data.quality_score > 0.7 ? 'high' : data.quality_score > 0.4 ? 'medium' : 'low';
+            const matchClass = data.match_score > 0.7 ? 'high' : data.match_score > 0.4 ? 'medium' : 'low';
+            
+            document.getElementById('scores').innerHTML = `
+                <div class="score ${qualityClass}">Quality Score: ${(data.quality_score * 100).toFixed(1)}%</div>
+                <div class="progress-bar"><div class="progress-fill" style="width: ${data.quality_score * 100}%"></div></div>
+                <div class="score ${matchClass}">Match Score: ${(data.match_score * 100).toFixed(1)}%</div>
+                <div class="progress-bar"><div class="progress-fill" style="width: ${data.match_score * 100}%"></div></div>
+                <div class="score">Fairness Score: ${(data.fairness_score * 100).toFixed(1)}%</div>
+            `;
+            
+            // Skills
+            const skillsHtml = data.skills.map(skill => 
+                `<span class="skill-tag">${skill}</span>`
+            ).join('');
+            document.getElementById('skills').innerHTML = skillsHtml || '<p>No skills detected</p>';
+            
+            // Experience
+            const experienceHtml = data.experience.map(exp => `
+                <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #007bff;">
+                    <h4>${exp.title || 'Position'} at ${exp.company || 'Company'}</h4>
+                    <p><strong>Duration:</strong> ${exp.duration}</p>
+                    <p>${exp.description}</p>
+                </div>
+            `).join('');
+            document.getElementById('experience').innerHTML = experienceHtml || '<p>No experience found</p>';
+            
+            // Education
+            const educationHtml = data.education.map(edu => `
+                <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #28a745;">
+                    <h4>${edu.degree}</h4>
+                    <p><strong>Institution:</strong> ${edu.institution}</p>
+                    <p><strong>Year:</strong> ${edu.year}</p>
+                </div>
+            `).join('');
+            document.getElementById('education').innerHTML = educationHtml || '<p>No education found</p>';
+            
+            // Bias Analysis
+            const biasHtml = Object.entries(data.bias_analysis).map(([category, score]) => {
+                const level = score > 0.6 ? 'high' : score > 0.3 ? 'medium' : 'low';
+                return `<span class="bias-indicator bias-${level}">${category}: ${(score * 100).toFixed(1)}%</span>`;
+            }).join('');
+            document.getElementById('biasAnalysis').innerHTML = biasHtml;
+            
+            // Summary
+            document.getElementById('summary').innerHTML = `<p>${data.summary}</p>`;
+        }
+        
+        function handleBatchUpload(input) {
+            if (input.files && input.files.length > 0) {
+                const files = Array.from(input.files);
+                const jobDesc = document.getElementById('batchJobDescription').value;
+                
+                const formData = new FormData();
+                files.forEach(file => formData.append('files', file));
+                formData.append('job_description', jobDesc);
+                
+                document.getElementById('batchResults').style.display = 'block';
+                document.getElementById('batchTable').innerHTML = '<p>⏳ Processing resumes...</p>';
+                
+                fetch('/api/batch_process', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        return;
+                    }
+                    displayBatchResults(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error processing resumes');
+                });
+            }
+        }
+        
+        function displayBatchResults(results) {
+            const tableHtml = `
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="padding: 10px; border: 1px solid #ddd;">Filename</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Name</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Email</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Quality</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Match</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Skills</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${results.map(result => `
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${result.filename}</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${result.name || 'N/A'}</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${result.email || 'N/A'}</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${(result.quality_score * 100).toFixed(1)}%</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${(result.match_score * 100).toFixed(1)}%</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${result.skills_count}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('batchTable').innerHTML = tableHtml;
+        }
+        
+        function exportData(format) {
+            window.open(`/api/export/${format}`, '_blank');
+        }
+    </script>
+</body>
+</html>
